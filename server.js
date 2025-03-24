@@ -1,35 +1,62 @@
 // server.js
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import routes from './routes/index.js';
+import connectDB from './db/connection.js';
+import expressLayouts from 'express-ejs-layouts';
+
+// ES modules fix for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Initialize express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware for parsing JSON bodies
+// Connect to MongoDB
+connectDB();
+
+// Middleware
 app.use(express.json());
-// Middleware for parsing URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Simple root route
+// View engine setup
+app.use(expressLayouts);
+app.set('layout', 'layouts/main');
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// API Routes
+app.use('/api', routes);
+
+// Frontend Routes
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to myStore API' });
+  res.render('index');
 });
 
-// Example product routes
-app.get('/api/products', (req, res) => {
-  // Here you would typically fetch products from a database
-  const products = [
-    { id: 1, name: 'Product 1', price: 19.99 },
-    { id: 2, name: 'Product 2', price: 29.99 },
-  ];
-  res.json(products);
+app.get('/products', async (req, res) => {
+  try {
+    const response = await fetch(`http://localhost:${PORT}/api/products`);
+    const products = await response.json();
+    res.render('products', { products });
+  } catch (error) {
+    res.status(500).render('error', { message: error.message });
+  }
 });
 
-app.get('/api/products/:id', (req, res) => {
-  // Here you would typically fetch a specific product from a database
-  const productId = parseInt(req.params.id);
-  res.json({ id: productId, name: `Product ${productId}`, price: 19.99 });
+app.get('/products/:id', async (req, res) => {
+  try {
+    const response = await fetch(`http://localhost:${PORT}/api/products/${req.params.id}`);
+    const product = await response.json();
+    res.render('product-detail', { product });
+  } catch (error) {
+    res.status(500).render('error', { message: error.message });
+  }
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

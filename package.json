@@ -1,7 +1,6 @@
 {
   "name": "2mystore",
   "module": "server.js",
-  // "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -9,7 +8,16 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@tailwindcss/cli": "^4.0.15",
+    "@tailwindcss/vite": "^4.0.15",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-ejs-layouts": "^2.5.1",
+    "mongoose": "^8.12.2",
+    "tailwindcss": "^4.0.15"
+  },
+  "scripts": {
+    "dev": "bun --watch server.js"
   }
 }
