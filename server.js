@@ -56,6 +56,31 @@ app.get('/products/:id', async (req, res) => {
   }
 });
 
+
+// Add these admin routes to server.js after your existing frontend routes
+
+// Admin routes
+app.get('/admin/login', (req, res) => {
+  res.render('admin/login', { layout: false });
+});
+
+app.get('/admin/dashboard', (req, res) => {
+  res.render('admin/dashboard', { layout: 'layouts/admin' });
+});
+
+app.get('/admin/products', (req, res) => {
+  res.render('admin/products', { layout: 'layouts/admin' });
+});
+
+app.get('/admin/users', (req, res) => {
+  res.render('admin/users', { layout: 'layouts/admin' });
+});
+
+app.get('/admin/orders', (req, res) => {
+  res.render('admin/orders', { layout: 'layouts/admin' });
+});
+
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

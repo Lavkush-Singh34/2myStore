@@ -1,0 +1,210 @@
+<!-- views/admin/orders.ejs -->
+<h1 class="text-2xl font-bold mb-8">Order Management</h1>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="ordersTable" class="bg-white divide-y divide-gray-200">
+            <!-- Orders will be loaded here -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Order Details Modal -->
+<div id="orderModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg w-full max-w-2xl p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Order Details</h2>
+            <button id="closeOrderModalBtn" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Order Information</h3>
+            <p><strong>Order ID:</strong> <span id="orderIdDetail"></span></p>
+            <p><strong>Date:</strong> <span id="orderDate"></span></p>
+            <p><strong>Customer:</strong> <span id="customerName"></span></p>
+            <p><strong>Email:</strong> <span id="customerEmail"></span></p>
+            <p><strong>Status:</strong> 
+                <select id="orderStatus" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </p>
+        </div>
+        
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Order Items</h3>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="orderItemsTable" class="bg-white divide-y divide-gray-200">
+                    <!-- Order items will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="text-right">
+            <p class="text-lg"><strong>Total Amount: $<span id="orderTotal"></span></strong></p>
+        </div>
+        
+        <div class="mt-6 flex justify-end">
+            <button id="updateOrderBtn" class="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">Update Order</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const orderModal = document.getElementById('orderModal');
+        const closeOrderModalBtn = document.getElementById('closeOrderModalBtn');
+        const updateOrderBtn = document.getElementById('updateOrderBtn');
+        const ordersTable = document.getElementById('ordersTable');
+        let currentOrderId = null;
+        
+        // Load orders
+        loadOrders();
+        
+        // Close modal
+        closeOrderModalBtn.addEventListener('click', function() {
+            orderModal.classList.add('hidden');
+        });
+        
+        // Update order
+        updateOrderBtn.addEventListener('click', async function() {
+            if (!currentOrderId) return;
+            
+            const status = document.getElementById('orderStatus').value;
+            
+            try {
+                const response = await fetch(`/api/admin/orders/${currentOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update order');
+                }
+                
+                // Reload orders and close modal
+                await loadOrders();
+                orderModal.classList.add('hidden');
+            } catch (error) {
+                console.error('Error updating order:', error);
+                alert('Error updating order: ' + error.message);
+            }
+        });
+        
+        // Load orders
+        async function loadOrders() {
+            try {
+                const response = await fetch('/api/admin/orders');
+                const orders = await response.json();
+                
+                ordersTable.innerHTML = '';
+                
+                orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    const date = new Date(order.createdAt);
+                    const formattedDate = date.toLocaleDateString();
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order._id.substring(0, 8)}...</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.user ? order.user.name : 'Unknown'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                ${order.status || 'Pending'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${order.totalAmount ? order.totalAmount.toFixed(2) : '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-indigo-600 hover:text-indigo-900 view-order-btn" data-id="${order._id}">View Details</button>
+                        </td>
+                    `;
+                    ordersTable.appendChild(row);
+                });
+                
+                // Add view details event listeners
+                document.querySelectorAll('.view-order-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        viewOrderDetails(this.getAttribute('data-id'));
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                alert('Error loading orders: ' + error.message);
+            }
+        }
+        
+        // View order details
+        async function viewOrderDetails(id) {
+            try {
+                const response = await fetch(`/api/admin/orders/${id}`);
+                const order = await response.json();
+                
+                currentOrderId = order._id;
+                
+                document.getElementById('orderIdDetail').textContent = order._id;
+                document.getElementById('orderDate').textContent = new Date(order.createdAt).toLocaleString();
+                document.getElementById('customerName').textContent = order.user ? order.user.name : 'Unknown';
+                document.getElementById('customerEmail').textContent = order.user ? order.user.email : 'Unknown';
+                document.getElementById('orderStatus').value = order.status || 'Pending';
+                document.getElementById('orderTotal').textContent = order.totalAmount ? order.totalAmount.toFixed(2) : '0.00';
+                
+                // Populate order items
+                const orderItemsTable = document.getElementById('orderItemsTable');
+                orderItemsTable.innerHTML = '';
+                
+                if (order.products && order.products.length > 0) {
+                    order.products.forEach(item => {
+                        const row = document.createElement('tr');
+                        const productName = item.product ? item.product.name : 'Unknown Product';
+                        const price = item.price || (item.product ? item.product.price : 0);
+                        const quantity = item.quantity || 1;
+                        const subtotal = price * quantity;
+                        
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${productName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${price.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${quantity}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${subtotal.toFixed(2)}</td>
+                        `;
+                        orderItemsTable.appendChild(row);
+                    });
+                } else {
+                    orderItemsTable.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No items found in this order</td></tr>';
+                }
+                
+                orderModal.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading order details:', error);
+                alert('Error loading order details: ' + error.message);
+            }
+        }
+    });
+</script>

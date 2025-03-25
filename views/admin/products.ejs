@@ -1,0 +1,238 @@
+<!-- views/admin/products.ejs -->
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-2xl font-bold">Products</h1>
+    <button id="addProductBtn" class="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">
+        Add New Product
+    </button>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="productsTable" class="bg-white divide-y divide-gray-200">
+            <!-- Products will be loaded here -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg w-full max-w-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modalTitle" class="text-xl font-bold">Add New Product</h2>
+            <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form id="productForm">
+            <input type="hidden" id="productId">
+            <div class="mb-4">
+                <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Product Name</label>
+                <input type="text" id="name" name="name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label for="price" class="block text-gray-700 text-sm font-bold mb-2">Price</label>
+                <input type="number" id="price" name="price" step="0.01" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label for="category" class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+                <input type="text" id="category" name="category" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label for="stock" class="block text-gray-700 text-sm font-bold mb-2">Stock Quantity</label>
+                <input type="number" id="stock" name="stock" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                <textarea id="description" name="description" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="3" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="imageUrl" class="block text-gray-700 text-sm font-bold mb-2">Image URL</label>
+                <input type="text" id="imageUrl" name="imageUrl" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productModal = document.getElementById('productModal');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const productForm = document.getElementById('productForm');
+        const productsTable = document.getElementById('productsTable');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        // Load products
+        loadProducts();
+        
+        // Add product button
+        addProductBtn.addEventListener('click', function() {
+            resetForm();
+            modalTitle.textContent = 'Add New Product';
+            productModal.classList.remove('hidden');
+        });
+        
+        // Close modal
+        closeModalBtn.addEventListener('click', function() {
+            productModal.classList.add('hidden');
+        });
+        
+        // Form submission
+        productForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('productId').value;
+            const product = {
+                name: document.getElementById('name').value,
+                price: parseFloat(document.getElementById('price').value),
+                category: document.getElementById('category').value,
+                stock: parseInt(document.getElementById('stock').value),
+                description: document.getElementById('description').value,
+                imageUrl: document.getElementById('imageUrl').value
+            };
+            
+            try {
+                let response;
+                
+                if (productId) {
+                    // Update product
+                    response = await fetch(`/api/admin/products/${productId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(product)
+                    });
+                } else {
+                    // Create product
+                    response = await fetch('/api/admin/products', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(product)
+                    });
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save product');
+                }
+                
+                // Reload products and close modal
+                await loadProducts();
+                productModal.classList.add('hidden');
+            } catch (error) {
+                console.error('Error saving product:', error);
+                alert('Error saving product: ' + error.message);
+            }
+        });
+        
+        // Load products
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/admin/products');
+                const products = await response.json();
+                
+                productsTable.innerHTML = '';
+                
+                products.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <img src="${product.imageUrl}" alt="${product.name}" class="h-12 w-12 object-cover rounded">
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${product.price.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.category}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.stock}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-indigo-600 hover:text<button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-btn" data-id="${product._id}">Edit</button>
+                            <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${product._id}">Delete</button>
+                        </td>
+                    `;
+                    productsTable.appendChild(row);
+                });
+                
+                // Add edit event listeners
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        editProduct(this.getAttribute('data-id'));
+                    });
+                });
+                
+                // Add delete event listeners
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        deleteProduct(this.getAttribute('data-id'));
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading products:', error);
+                alert('Error loading products: ' + error.message);
+            }
+        }
+        
+        // Edit product
+        async function editProduct(id) {
+            try {
+                const response = await fetch(`/api/products/${id}`);
+                const product = await response.json();
+                
+                document.getElementById('productId').value = product._id;
+                document.getElementById('name').value = product.name;
+                document.getElementById('price').value = product.price;
+                document.getElementById('category').value = product.category;
+                document.getElementById('stock').value = product.stock;
+                document.getElementById('description').value = product.description;
+                document.getElementById('imageUrl').value = product.imageUrl;
+                
+                modalTitle.textContent = 'Edit Product';
+                productModal.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading product details:', error);
+                alert('Error loading product details: ' + error.message);
+            }
+        }
+        
+        // Delete product
+        async function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                try {
+                    const response = await fetch(`/api/admin/products/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to delete product');
+                    }
+                    
+                    await loadProducts();
+                } catch (error) {
+                    console.error('Error deleting product:', error);
+                    alert('Error deleting product: ' + error.message);
+                }
+            }
+        }
+        
+        // Reset form
+        function resetForm() {
+            document.getElementById('productId').value = '';
+            document.getElementById('productForm').reset();
+        }
+    });
+</script>
