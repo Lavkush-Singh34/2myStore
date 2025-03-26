@@ -1,42 +1,39 @@
-<!-- views/layouts/main.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MyStore</title>
-  <link rel="stylesheet" href="/css/output.css"></head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyStore</title>
+    <link href="/css/output.css" rel="stylesheet">
+</head>
 <body class="bg-gray-100">
-  <!-- Navigation -->
-  <nav class="bg-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <div class="flex">
-          <a href="/" class="flex-shrink-0 flex items-center">
-            <span class="font-bold text-xl text-indigo-600">MyStore</span>
-          </a>
-          <div class="ml-6 flex space-x-8">
-            <a href="/products" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-              Products
-            </a>
-          </div>
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-gray-800">MyStore</a>
+            <div class="flex space-x-4">
+                <a href="/" class="text-gray-700 hover:text-gray-900">Home</a>
+                <a href="/products" class="text-gray-700 hover:text-gray-900">Products</a>
+                <% if (!locals.user) { %>
+                    <a href="/users/login" class="text-gray-700 hover:text-gray-900">Login</a>
+                    <a href="/users/signup" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Sign Up</a>
+                <% } else { %>
+                    <a href="/users/profile" class="text-gray-700 hover:text-gray-900">Profile</a>
+                    <form action="/users/logout" method="POST" class="inline">
+                        <button type="submit" class="text-gray-700 hover:text-gray-900">Logout</button>
+                    </form>
+                <% } %>
+            </div>
         </div>
-      </div>
-    </div>
-  </nav>
+    </nav>
 
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <%- body %>
-  </main>
+    <main class="container mx-auto px-4 py-6">
+        <%- body %>
+    </main>
 
-  <!-- Footer -->
-  <footer class="bg-white mt-12">
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <p class="text-center text-gray-500 text-sm">
-        &copy; 2025 MyStore. All rights reserved.
-      </p>
-    </div>
-  </footer>
+    <footer class="bg-white shadow-md mt-6 py-4 text-center">
+        <p>&copy; 2024 MyStore. All rights reserved.</p>
+    </footer>
+
+    <script src="/js/main.js"></script>
 </body>
 </html>
